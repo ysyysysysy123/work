@@ -1,0 +1,54 @@
+/* V7 — readability-first polish. Loaded last so the existing layout and behavior stay intact. */
+:root{
+  --paper:#f1f3f5;
+  --surface:#fffefa;
+  --ink:#102033;
+  --muted:#53657a;
+  --line:#d3dae2;
+  --navy:#112b4a;
+  --blue:#1e62c9;
+  --shadow:0 20px 55px rgba(17,43,74,.09);
+}
+body{font-size:15.5px;line-height:1.72;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.topbar{height:80px;grid-template-columns:290px 1fr 300px;padding:0 32px;box-shadow:0 7px 24px rgba(6,22,42,.16)}
+.brand-mark{width:42px;height:42px;font-size:17px}
+.brand strong{font-size:16px}.brand small{font-size:12px}
+.current-week{min-width:145px}.current-week strong{font-size:15px}.current-week small,.global-progress span{font-size:12px}
+.outline-btn{padding:10px 15px;font-size:13px}.week-control button{width:42px;height:42px;font-size:16px}
+.layout{max-width:1540px;grid-template-columns:268px minmax(0,1fr);gap:30px;padding:31px 30px 43px}
+.side-rail{top:116px;height:calc(100vh - 148px)}
+.rail-intro span,.eyebrow{font-size:11px}.rail-intro h2{font-size:20px}.rail-intro p{font-size:13px;line-height:1.7}
+.phase-rail{gap:9px}.phase-rail-item{grid-template-columns:38px 1fr;padding:12px 11px}.phase-rail-no{width:34px;height:34px;font-size:12px}
+.phase-rail-item strong{font-size:13px;line-height:1.45}.phase-rail-item small{font-size:11px;line-height:1.5;margin-top:3px}.rail-legend{font-size:12px;line-height:1.65}
+.workspace-meta{margin:4px 0 17px}.workspace-meta span{font-size:13px}
+.week-heading{padding:39px 44px 37px;border-radius:27px 27px 0 0}.week-kicker{font-size:13px}.week-heading h1{margin-top:18px;font-size:clamp(30px,4vw,46px);max-width:1000px}.week-heading h1 span{font-size:13px}
+.week-heading>p{max-width:900px;font-size:16px;line-height:1.72}.week-badges{gap:10px;margin-top:27px}.week-badges span{padding:7px 12px;font-size:12px}
+.section-panel{grid-template-columns:78px 1fr}.section-index{padding-top:40px;font-size:12px}.section-body{padding:35px 41px 40px}
+.section-title-row{margin-bottom:26px}.section-title-row h2{font-size:24px;line-height:1.35}
+.phase-pill,.load-pill,.count-pill,.verified-pill,.lock-pill,.save-state{padding:7px 11px;font-size:11px}
+.purpose-grid{border-radius:16px}.purpose-grid article{padding:20px 21px;min-height:124px}.purpose-grid small{font-size:11px}.purpose-grid p{font-size:13.5px;line-height:1.76}
+.project-strip{padding:16px 18px;gap:20px}.project-strip strong,.project-strip span{font-size:13px}.project-strip em{font-size:11px}
+.week-route{gap:11px;margin-bottom:22px}.route-step{padding:14px 15px;border-radius:14px}.route-step span{font-size:11px}.route-step strong{font-size:13.5px;margin-top:8px}.route-step small{font-size:12px;line-height:1.65}
+.learning-points{gap:13px}.learning-points li{grid-template-columns:42px 1fr;gap:13px;padding:17px;border-radius:14px;background:#fff}.learning-points li>span{width:39px;height:32px;font-size:12px}
+.learning-points li>div>p{font-size:13.5px;line-height:1.72}.learning-link{margin-top:9px;padding-top:9px;font-size:12px;line-height:1.65}
+.resource-grid{gap:16px}.resource-card{padding:21px;border-radius:16px;box-shadow:0 8px 22px rgba(17,43,74,.035)}.resource-role span{font-size:11px}.resource-role em{font-size:11px;line-height:1.45}
+.resource-card h4{margin:14px 0 9px;font-size:17px;line-height:1.45}.resource-route{gap:7px;margin-bottom:13px}.resource-route span{padding:5px 8px;font-size:10px}
+.resource-scope{font-size:12.5px;line-height:1.8;margin-bottom:16px}.resource-stop{padding:13px 14px;font-size:12px;line-height:1.75}.resource-meta{gap:7px;margin-top:15px}.resource-meta span{padding:4px 8px;font-size:10px}
+.resource-link{margin-top:16px;padding-top:14px;font-size:13px}.resource-rule{font-size:12px;line-height:1.7;margin-top:15px}
+.task-list{gap:18px}.task-item{grid-template-columns:24px 40px 1fr;gap:12px;padding:21px;border-radius:17px;box-shadow:0 7px 20px rgba(17,43,74,.03)}
+.check-ui{width:22px;height:22px;border-radius:7px}.is-done .check-ui:after{left:6px;top:3px;width:5px;height:10px}.task-order{font-size:12px;line-height:25px}.task-copy>strong{font-size:15px;line-height:1.68}
+.task-meta{gap:8px;margin-top:8px}.task-meta span{padding:5px 8px;font-size:11px}.task-meaning{margin-top:14px;padding:13px 14px;font-size:12.5px;line-height:1.8}.task-example{margin-top:11px;font-size:12px;line-height:1.76}
+.task-steps{margin-top:12px;padding-left:24px;font-size:12px;line-height:1.8}.task-steps li+li{margin-top:6px}.task-deliverable{margin-top:13px;padding:12px 14px;font-size:12px;line-height:1.72}
+.capacity-note{margin-top:18px;padding:16px 18px;font-size:12.5px;line-height:1.75}
+.checkpoint-rule{margin-bottom:20px;padding:14px 16px;font-size:13px;line-height:1.75}.question-list{gap:11px}.question-item{grid-template-columns:23px 38px 1fr;gap:11px;padding:17px 18px;border-radius:13px}.question-item>span:nth-of-type(2){font-size:12px;line-height:25px}.question-item p{font-size:13.5px;line-height:1.72}
+.gate-grid{gap:13px;margin-top:18px}.gate-card,.repair-card{padding:19px}.gate-card small,.repair-card small{font-size:10px}.gate-card p,.repair-card p{font-size:13px;line-height:1.75}
+.gate-toggle{margin-top:18px;padding:19px 20px}.gate-toggle strong{font-size:14px}.gate-toggle small{font-size:12px;line-height:1.6;margin-top:4px}
+.review-grid{gap:16px}.review-grid label{gap:8px}.review-grid span{font-size:12px}.review-grid input,.review-grid textarea{padding:13px 14px;font-size:14px;line-height:1.6}.review-grid textarea{min-height:98px}
+.optional-lane{margin-top:18px;border-radius:13px}.optional-lane summary{padding:15px 17px;font-size:13px}.optional-lane div{padding:0 17px 16px}.optional-lane p{font-size:12.5px;line-height:1.7}
+.algorithm-week-intro p,.algorithm-gate p,.algorithm-source,.algo-item{font-size:12px}.algo-item a{line-height:1.55}
+.roadmap{max-width:1540px;padding:0 32px 90px}.roadmap-head h2{font-size:32px}.roadmap-head p{font-size:13px;line-height:1.7}.phase-map{gap:11px;margin-top:17px}.phase-map-card{min-height:245px;padding:18px}.map-range{font-size:11px}.phase-map-card h3{font-size:17px}.phase-map-card p{font-size:12px;line-height:1.7}.phase-map-card div span,.phase-map-card div em{font-size:10px}
+.roadmap-section{margin-top:50px}.roadmap-section-head h2{font-size:25px}.roadmap-section-head p{font-size:12.5px}.track-table th,.track-table td{padding:14px 12px;font-size:12px}.track-table thead th span{font-size:10px}.level{font-size:11px}
+.project-card{padding:26px}.project-card-top span,.project-card-top em{font-size:11px}.project-card h3{font-size:24px}.project-card>p{font-size:13px;line-height:1.7}.project-card li{font-size:11px;line-height:1.55;padding:10px}.proof-list strong,.proof-list span{font-size:10px}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid rgba(30,98,201,.35);outline-offset:3px}
+@media(max-width:1100px){.topbar{grid-template-columns:240px 1fr 240px}.layout{grid-template-columns:230px minmax(0,1fr);gap:22px;padding:26px 22px}.section-body{padding:34px 32px 39px}.section-panel{grid-template-columns:62px}.project-strip{grid-template-columns:1fr}.project-strip em{justify-self:start}}
+@media(max-width:780px){body{font-size:15px}.topbar{padding:12px 15px}.layout{padding:16px}.week-heading{padding:31px 24px 29px}.week-heading>p{font-size:15px}.section-panel{grid-template-columns:44px 1fr}.section-body{padding:29px 20px 33px}.section-title-row{display:block}.section-title-row>span{display:inline-flex;margin-top:10px;white-space:normal}.section-title-row h2{font-size:22px}.purpose-grid,.learning-points,.resource-grid,.gate-grid,.review-grid{grid-template-columns:1fr}.task-item{grid-template-columns:24px 35px 1fr;padding:18px 16px}.task-copy>strong{font-size:15px}.roadmap{padding:0 16px 70px}.roadmap-head h2{font-size:28px}}
