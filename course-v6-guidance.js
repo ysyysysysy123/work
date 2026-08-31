@@ -5,7 +5,7 @@
     {
       points: ["L1", "L2"],
       meaning: "从你做过的真实项目里选一条最小请求链，弄清一次请求究竟经过哪些层、谁依赖谁，以及错误在哪一层产生、补充上下文和转换。这里的“抽取”不是复制整个公司项目，也不是泄露业务代码。",
-      example: "例如 GET /orders/:id：HTTP/RPC Handler 读取参数 → OrderService 执行业务规则 → OrderRepository 查询数据库。若公司代码不能带出，只保留 20–50 行伪代码并把公司名、表名、字段、地址和数据全部替换；也可以在 course-lab 里重建同结构的小例子。",
+      example: "例如 GET /orders/:id：HTTP/RPC Handler 读取参数 → OrderService 执行业务规则 → OrderRepository 查询数据库。若公司代码不能带出，只保留 20–50 行伪代码并把公司名、表名、字段、地址和数据全部替换；也可以在自己的个人练习仓库里重建同结构的小例子。",
       steps: [
         "选一个你熟悉且只有 3 层左右的接口；不要选复杂核心链路，也不要复制配置、密钥、真实数据。",
         "沿调用关系依次写出 Handler → Service → Repository，在箭头旁标出参数、返回值和依赖方向。",
@@ -18,11 +18,11 @@
       meaning: "把上一项发现的问题在一个独立练习仓库中改成可运行的最小版本。目标是练清依赖方向、最小接口、错误链和 context 传播，不是把原业务搬过来。",
       example: "可以实现 GET /users/{id}：handler 依赖 UserService，service 只依赖自己真正需要的 UserRepository 接口；repository 返回可被 errors.Is 判断的 not-found；请求 context 一直传到存储层。",
       steps: [
-        "创建 course-lab/W01，先写最小目录和构造函数，让依赖通过参数传入。",
+        "在个人练习仓库中新建 W01 目录，先写最小目录和构造函数，让依赖通过参数传入。",
         "在使用方声明最小接口；用 %w 保留根因并补充业务上下文；每一层显式接收并继续传递 context。",
         "运行 go test ./...，再人工搜索全局可变依赖、丢弃错误、context.Background 和重复日志。"
       ],
-      deliverable: "course-lab/W01 可运行代码：一个接口、一条完整调用链、可替换的 repository fake，以及通过的测试。"
+      deliverable: "个人练习仓库/W01 中的可运行代码：一个接口、一条完整调用链、可替换的 repository fake，以及通过的测试。"
     },
     {
       points: ["L2", "L4"],
@@ -37,6 +37,88 @@
     }
   ];
 
+  const w15 = [
+    {
+      points: ["L1"],
+      meaning: "先用一个纸面例子弄清 Kafka 的顺序与并行边界。你不是要搭集群，而是要能预测：某条消息进入哪个 partition、由 consumer group 中哪个消费者处理、offset 何时前进、重平衡时哪些分区会被重新分配。",
+      example: "画 3 个 partition、2 个 consumer。连续放入同一 order_id 的 6 条事件，再增加一个 consumer，分别推演 key 相同/不同以及 rebalance 前后的分配和顺序。",
+      steps: [
+        "画 topic→3 个 partition→2 个 consumer 的分配图，并写明同一 key 如何选择 partition。",
+        "记录每个 partition 已处理 offset 与已提交 offset；模拟新增或退出 consumer 后的 rebalance。",
+        "写出三个结论：顺序保证到什么范围、增加 partition 会改变什么、offset 提交代表什么。"
+      ],
+      deliverable: "docs/W15-kafka-model.md：一张分区/消费者图、两次重平衡推演、三条边界结论。不需要写 Kafka 代码。"
+    },
+    {
+      points: ["L2"],
+      meaning: "做一个最小可运行消费者，主动制造“副作用已经成功，但 offset 还没提交”这一崩溃窗口，观察 Kafka 为什么会再次投递。目标是亲眼看见 at-least-once，而不是只背定义。",
+      example: "消费 order-paid 事件后先把计数器 +1，再在提交 offset 前退出进程。重启消费者后同一消息会再次到达；如果计数器再次 +1，就证明副作用并不天然幂等。",
+      steps: [
+        "只建一个 topic、一个 consumer group 和一个本地结果表/计数器；关闭自动提交或显式控制提交时机。",
+        "处理消息并写入结果后，在 offset commit 前主动退出；保存消息 key、partition、offset 和结果变化。",
+        "重启后确认同一 offset 被重新消费；写一个自动化或可重复脚本，让该现象每次都能复现。"
+      ],
+      deliverable: "一个最小生产者/消费者、一次可重复崩溃脚本，以及证明“同一消息导致两次副作用”的日志或数据截图。"
+    },
+    {
+      points: ["L3"],
+      meaning: "修复上一步暴露的两个问题：重复消费不能重复产生业务副作用；业务数据和待发布事件不能因为双写失败而永久不一致。死信与积压指标负责让无法自动恢复的问题可见。",
+      example: "消费者用 event_id 建唯一约束：第一次处理写业务结果，第二次收到同一 event_id 直接返回成功。生产侧在同一数据库事务中写业务表和 outbox 表，再由 relay 发布；relay 即使重复发布，消费者仍靠 event_id 去重。",
+      steps: [
+        "先给消费结果增加 event_id 唯一约束或幂等记录，重跑 T2，确认计数不再重复。",
+        "在同一事务中写业务数据与 outbox；模拟 relay 发布后、标记已发送前崩溃，确认重复发布仍安全。",
+        "为永久失败进入死信、consumer lag/积压增加可观察指标；写清楚人工重放前必须满足的条件。"
+      ],
+      deliverable: "幂等消费测试、outbox/relay 最小实现、一次 relay 崩溃恢复证据、一个死信样例和一个积压指标。"
+    }
+  ];
+
+  const w24 = [
+    {
+      points: ["L1", "L2"],
+      meaning: "这一步不是让你完成六套系统，也不是把题库里的答案逐条确认。你只为六个题目各写一张“索引卡”：用同一个答题顺序列出需求、规模、接口/数据、核心矛盾、失败点和演进方向；每题到 20 分钟必须停。",
+      example: "短链骨架可以只写：读多写少；核心接口 create/redirect；短码唯一性；缓存热点；数据库与缓存失败；从单库演进到分片。它是一页提示卡，不要求写代码或画完整生产架构。",
+      steps: [
+        "先从 M1 只看指定的 5 处，抄下统一的六格模板；最多阅读 60 分钟，没看完也停止。",
+        "依次为短链、秒杀、推送、订单、计数、扫码登录填六格；每题计时 20 分钟，只写关键词和一张小图。",
+        "每题最后圈出一个最重要矛盾；不会的地方标问号，不在这一项临时扩展阅读。"
+      ],
+      deliverable: "docs/W24-six-skeletons.md：六张一页以内的骨架卡，每张包含六格模板、一个核心矛盾和至多三个待确认点。"
+    },
+    {
+      points: ["L1", "L3"],
+      meaning: "六题骨架完成后随机抽一题，才做本周唯一一次完整设计。60 分钟模拟真实面试，随后用 30 分钟按固定标准自评；不能边做边查资料。",
+      example: "抽到秒杀题：先确认库存一致性、超卖容忍度和峰值，再估算请求量，给出 API/数据模型、削峰与扣库存流程、热点与失败处理，最后说明最小版本如何演进。",
+      steps: [
+        "把六个题名打乱抽一个；关掉资料，准备白板或画图工具并开始 60 分钟计时。",
+        "按 5/10/15/15/10/5 分钟分配：澄清、估算、模型、核心流程、故障取舍、总结；卡住也继续主动推进。",
+        "结束后用 30 分钟从需求、估算、正确性、可用性、取舍、表达六项各打 0–2 分，并写出证据。"
+      ],
+      deliverable: "一份完整设计图/文档 + 60 分钟计时记录 + 六项自评表；只需要一题，不是六题。"
+    },
+    {
+      points: ["L1", "L2", "L3"],
+      meaning: "继续使用上一项的同一道题做追问，不再换题。追问是在检查你的方案遇到流量、重复、热点和故障时是否站得住，不要求你背题库里的所有标准答案。",
+      example: "对秒杀题追问：峰值扩大 10 倍先坏哪里？MQ 重复投递会怎样？Redis 热 key 如何发现和缓解？数据库不可用时怎样降级？用哪些指标判断恢复？",
+      steps: [
+        "请同事提问，或把预设追问逐条录音自答；全程不查资料，控制在 60 分钟内。",
+        "每个回答都包含：当前假设、会出什么问题、选择什么方案、代价是什么、如何观测。",
+        "用剩余 30 分钟评分；不会或含糊的项目记 0 分，能给方案但无取舍记 1 分，有边界与证据记 2 分。"
+      ],
+      deliverable: "追问清单、录音或文字答案、逐项分数和最低分项；这就是本周的无辅助验收证据。"
+    },
+    {
+      points: ["L1", "L2", "L3"],
+      meaning: "只修复评分最低的一项，不把整周推倒重来。修好后做一个小变式，确认你掌握的是方法而不是记住原答案。",
+      example: "如果最低分是容量估算，就补齐峰值 QPS、存储和带宽，再回答“日活扩大 10 倍时先扩哪里”；如果最低分是重复消息，就补幂等边界，再回答“消息乱序怎么办”。",
+      steps: [
+        "从自评和追问中选唯一最低分项；若并列，优先需求边界或容量估算。",
+        "只查与该缺口直接相关的 M1 小节或备用权威链接，用 60–90 分钟修正文档。",
+        "关掉资料回答一个变式，并把修改前后差异和仍未解决的风险写在同一页。"
+      ],
+      deliverable: "一份修订前后对照 + 一个无辅助变式答案。达到 Gate 就进入 W25，其余问号进入以后复习清单。"
+    }
+  ];
   function category(text) {
     if (/答辩|模拟|闭卷|口述|演示/.test(text)) return "explain";
     if (/压测|benchmark|基准/.test(text)) return "benchmark";
@@ -87,7 +169,7 @@
       meaning: meanings[kind],
       example: `本周具体对象是：“${action}”。只围绕“${week.outcome}”收集证据，不额外扩展新技术。`,
       steps: [
-        `开始前先写一句完成定义，并准备独立目录 course-lab/W${String(index.weekNo || 0).padStart(2, "0")} 或本周证据文档。`,
+        `开始前先写一句完成定义，并在个人练习仓库中准备 W${String(index.weekNo || 0).padStart(2, "0")} 独立目录或本周证据文档。`,
         middle,
         `对照本周通过门槛逐项检查；补齐复现步骤，把结果放到固定目录后再勾选完成。`
       ],
@@ -107,6 +189,8 @@
 
   function taskGuide(weekNo, week, taskIndex, task) {
     if (weekNo === 1 && w1[taskIndex]) return w1[taskIndex];
+    if (weekNo === 15 && w15[taskIndex]) return w15[taskIndex];
+    if (weekNo === 24 && w24[taskIndex]) return w24[taskIndex];
     const marker = { weekNo };
     return genericTask(task, week, Object.assign(marker, { valueOf: () => taskIndex }), pointCodesForTask(week, taskIndex));
   }
@@ -124,12 +208,14 @@
     }
     const taskIndex = Math.min(resourceIndex, week.tasks.length - 1);
     const questionIndex = Math.min(resourceIndex, week.questions.length - 1);
+    const allTasks = week.tasks.length > 1 ? `T1–T${week.tasks.length}` : "T1";
+    const allQuestions = week.questions.length > 1 ? `Q1–Q${week.questions.length}` : "Q1";
     return {
       points: pointIndexes.map(i => `L${i + 1}`),
-      task: `T${taskIndex + 1}`,
-      question: `Q${questionIndex + 1}`,
+      task: resourceCount <= 1 ? allTasks : `T${taskIndex + 1}`,
+      question: resourceCount <= 1 ? allQuestions : `Q${questionIndex + 1}`,
       stop: resource.url
-        ? `完成上面的“只看”范围，能用自己的话回答 ${`Q${questionIndex + 1}`}，并能开始 ${`T${taskIndex + 1}`} 时就停止；不要顺着网站继续通读。`
+        ? `完成上面的“只看”范围，能开始 ${resourceCount <= 1 ? allTasks : `T${taskIndex + 1}`} 时就停止；不要顺着网站继续通读。遇到主资料未覆盖或结论拿不准，再使用旁边的核对链接。`
         : "本周不新增阅读；只整理已有代码、测试、数据和错题。"
     };
   }

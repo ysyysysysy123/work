@@ -1,6 +1,6 @@
 window.COURSE_CURATION_V3={
-  "verifiedAt": "2026-08-29",
-  "rule": "每周最多两份：先用中文讲解建立直觉，再用官方或一手资料核对结论。",
+  "verifiedAt": "2026-08-31",
+  "rule": "每周默认只读一份主资料；主资料未覆盖或结论拿不准时，才打开旁边的官方或一手核对链接。",
   "featured": [
     {
       "id": "xiaolin",
@@ -65,13 +65,13 @@ window.COURSE_CURATION_V3={
       "id": "seven",
       "name": "7 Days Golang",
       "url": "https://github.com/geektutu/7days-golang",
-      "grade": "B+",
-      "type": "动手补充",
+      "grade": "B",
+      "type": "历史型动手补充",
       "cost": "免费",
       "lang": "中文",
       "fit": "从零实现 Web、Cache、ORM、RPC，适合看懂框架内部结构。",
-      "proof": "约 17k GitHub stars，MIT 许可，中文项目式教程。",
-      "limit": "教学型实现，不等同于生产级框架；不作为主项目。"
+      "proof": "MIT 许可的中文项目式教程；仓库链接有效，但最近一次提交停留在 2021-05-26。",
+      "limit": "只用于理解框架原理，不作为当前依赖版本、工程规范或生产项目模板。"
     },
     {
       "id": "mysql",
@@ -252,6 +252,66 @@ window.COURSE_CURATION_V3={
       "fit": "API、RPC、服务治理和短链微服务的实现参考。",
       "proof": "约 33k GitHub stars，2026 仍发布版本，收录 CNCF Landscape。",
       "limit": "官方 ShortURL 教程明确说明是简化教学实现，不可冒充生产方案。"
+    },
+    {
+      "id": "sarama",
+      "name": "IBM Sarama",
+      "url": "https://github.com/IBM/sarama/tree/main/examples",
+      "grade": "A-",
+      "type": "Go Kafka 实战参考",
+      "cost": "免费",
+      "lang": "英文代码",
+      "fit": "用 Go 编写最小 producer、consumer group、offset 与故障复现实验。",
+      "proof": "IBM 名下 MIT 许可 Go Kafka 客户端；README 提供 API、mocks 与 examples，仓库在 2026-08-28 仍有提交。",
+      "limit": "只看 examples、ConsumerGroup 和 offset 相关 API；不要求通读仓库，也不直接复制成生产架构。"
+    },
+    {
+      "id": "dunwu-kafka",
+      "name": "BIGDATA-TUTORIAL：Kafka 中文教程",
+      "url": "https://dunwu.github.io/bigdata-tutorial/kafka/",
+      "grade": "B+",
+      "type": "中文系统教程",
+      "cost": "免费",
+      "lang": "中文",
+      "fit": "Kafka 快速入门、生产者、消费者、集群、可靠传输、存储与运维。",
+      "proof": "开源中文大数据教程；Kafka 目录完整，页面持续维护，并明确链接 Kafka 官方文档与经典书籍。",
+      "limit": "用于第一遍建立完整图景；版本差异和精确配置仍以 Kafka 官方文档核对。"
+    },
+    {
+      "id": "javaguide-mq",
+      "name": "JavaGuide：消息队列与 Kafka",
+      "url": "https://javaguide.cn/high-performance/message-queue/message-queue.html",
+      "grade": "A-",
+      "type": "中文后端知识库",
+      "cost": "免费",
+      "lang": "中文",
+      "fit": "消息重复、丢失、顺序、积压、重试、死信、幂等与 Kafka 高频问题。",
+      "proof": "长期维护、公开访问的中文后端知识库；相关页面覆盖消息可靠性核心问题，适合工程与面试双线学习。",
+      "limit": "Java 示例只理解机制；Go 实现仍按本周任务完成，精确协议语义用官方资料核对。"
+    },
+    {
+      "id": "datawhale-rag",
+      "name": "Datawhale：动手学大模型应用开发",
+      "url": "https://datawhalechina.github.io/llm-universe/",
+      "grade": "A-",
+      "type": "中文 RAG 主线",
+      "cost": "免费",
+      "lang": "中文",
+      "fit": "Embedding、文档切分、向量库、RAG、检索优化与评估迭代。",
+      "proof": "Datawhale 开源学习项目，提供在线阅读、版本 PDF、完整项目和多人贡献；内容围绕知识库助手逐步展开。",
+      "limit": "示例以 Python/LangChain 为主；只学框架无关方法，再用 Go/Eino 实现。"
+    },
+    {
+      "id": "datawhale-agents",
+      "name": "Datawhale：从零开始构建智能体",
+      "url": "https://hello-agents.datawhale.cc",
+      "grade": "A-",
+      "type": "中文 Agent 主线",
+      "cost": "免费",
+      "lang": "中文",
+      "fit": "ReAct、工具、Memory、Context、MCP、评测与完整 Agent 项目。",
+      "proof": "Datawhale 系统性开源教程，章节状态完整，覆盖原理、实现、协议、评测和综合项目，并提供国内加速站点。",
+      "limit": "示例框架不一定是 Go；概念学完后统一用 Eino/Go 复现。"
     }
   ],
   "guides": {
@@ -268,7 +328,7 @@ window.COURSE_CURATION_V3={
     "12": {"name":"小林：图解 Redis 数据结构","url":"https://www.xiaolincoding.com/redis/","scope":"只看常见数据类型、底层结构、过期删除和内存淘汰；不背源码字段。","metaId":"xiaolin"},
     "13": {"name":"小林：缓存一致性与缓存异常","url":"https://www.xiaolincoding.com/redis/","scope":"只看缓存与数据库一致性、穿透、击穿、雪崩；每个问题写出触发条件和一种工程解法。","metaId":"xiaolin"},
     "14": {"name":"小林：Redis 持久化与高可用","url":"https://www.xiaolincoding.com/redis/","scope":"只看 RDB、AOF、主从、哨兵、集群和分布式锁；先理解取舍，不背命令。","metaId":"xiaolin"},
-    "15": {"name":"Confluent Kafka 101","url":"https://developer.confluent.io/courses/apache-kafka/","scope":"先完成 topics、partitions、producer、consumer group、offset 和 delivery semantics；代码示例不照搬。","metaId":"kafka"},
+    "15": {"name":"BIGDATA-TUTORIAL：Kafka 中文教程","url":"https://dunwu.github.io/bigdata-tutorial/kafka/","scope":"按顺序只看快速入门、生产者、消费者和可靠传输；重点弄懂 topic、partition、consumer group、offset、重复与丢失。","metaId":"dunwu-kafka"},
     "17": {"name":"小林：图解网络","url":"https://www.xiaolincoding.com/network/","scope":"按顺序看 DNS、TCP、TLS、HTTP；TCP 只深入连接、可靠传输、拥塞控制。","metaId":"network"},
     "18": {"name":"小林：图解系统","url":"https://www.xiaolincoding.com/os/","scope":"只看进程/线程、虚拟内存、文件 I/O、零拷贝、I/O 多路复用和 epoll。","metaId":"network"},
     "19": {"name":"李文周：gRPC 教程","url":"https://liwenzhou.com/posts/go/grpc/","scope":"先看 RPC/protobuf/gRPC 基础、Go server/client 与错误处理；流式 RPC 暂时跳过。","metaId":"liwenzhou"},
@@ -276,24 +336,27 @@ window.COURSE_CURATION_V3={
     "21": {"name":"System Design Primer 中文","url":"https://github.com/donnemartin/system-design-primer/blob/master/README-zh-Hans.md","scope":"先看可用性、一致性、复制、分区和常见权衡；只建立故障模型，不做完整题库。","metaId":"system"},
     "22": {"name":"李文周：漏桶与令牌桶限流","url":"https://liwenzhou.com/posts/go/ratelimit/","scope":"先弄清固定窗口、滑动窗口、漏桶、令牌桶的行为差异；再映射到过载保护。","metaId":"liwenzhou"},
     "23": {"name":"李文周：OpenTelemetry Go 快速指南","url":"https://liwenzhou.com/posts/go/opentelemetry-go/","scope":"先完成最小 HTTP trace，理解 trace/span/propagation；Prometheus 只补 counters、histogram 与 labels。","metaId":"liwenzhou"},
-    "24": {"name":"System Design Primer 中文","url":"https://github.com/donnemartin/system-design-primer/blob/master/README-zh-Hans.md","scope":"只看系统设计方法、估算、缓存、异步和 URL Shortener 示例；用于形成答题顺序。","metaId":"system"},
+    "24": {"name":"System Design Primer 中文","url":"https://github.com/donnemartin/system-design-primer/blob/master/README-zh-Hans.md","scope":"只看 5 处：如何处理一个系统设计的面试题、预估计算量、缓存、异步、设计 Pastebin.com（或者 Bit.ly）。看到能够套用固定答题模板就停止；不通读仓库，也不逐条核实全文。","metaId":"system"},
     "26": {"name":"李文周：Go 操作 MySQL","url":"https://liwenzhou.com/posts/go/mysql/","scope":"只看 database/sql、预处理、事务和连接池；ORM 章节跳过。","metaId":"liwenzhou"},
     "27": {"name":"小林：MySQL 锁与事务导读","url":"https://www.xiaolincoding.com/mysql/","scope":"只看锁、事务和死锁相关章节；先理解 FOR UPDATE、等待与并发冲突，再进入项目设计。","metaId":"xiaolin"},
+    "28": {"name":"JavaGuide：消息队列基础知识总结","url":"https://javaguide.cn/high-performance/message-queue/message-queue.html","scope":"只看重试、死信、重复、丢失、积压和幂等；把机制映射到 Worker 的失败分类、退避和终止条件。","metaId":"javaguide-mq"},
+    "29": {"name":"JavaGuide：Kafka 常见问题总结","url":"https://javaguide.cn/high-performance/message-queue/kafka-questions-01.html","scope":"只看消息重复、丢失、顺序和幂等；先理解可靠交付边界，Transactional Outbox 的精确定义再用旁边官方链接核对。","metaId":"javaguide-mq"},
     "30": {"name":"李文周：限流策略导读","url":"https://liwenzhou.com/posts/go/ratelimit/","scope":"复习滑动窗口、漏桶和令牌桶，把每种策略映射到 ReliableTask 的入口、Worker 和下游保护。","metaId":"liwenzhou"},
     "31": {"name":"李文周：OpenTelemetry Go 快速指南","url":"https://liwenzhou.com/posts/go/opentelemetry-go/","scope":"把 HTTP、gRPC、GORM、Redis 的 trace 串起来；只选与你项目实际使用的组件。","metaId":"liwenzhou"},
     "33": {"name":"小林：图解 Agent","url":"https://xiaolinnote.com/agent/","scope":"只看大模型基础、Prompt、Function Calling，先理解一次模型调用的数据流。","metaId":"xiaolin"},
     "34": {"name":"小林：Prompt 与上下文入门","url":"https://xiaolinnote.com/agent/","scope":"只看 Prompt、上下文和结构化输出；把提示词当成可测试的输入契约。","metaId":"xiaolin"},
-    "35": {"name":"LLM Zoomcamp：Vector Search","url":"https://datatalks.club/docs/courses/llm-zoomcamp/resources/","scope":"只看 embedding、相似度、向量检索与元数据过滤；Python 代码只读。","metaId":"llmzoom"},
-    "36": {"name":"LLM Zoomcamp：检索基础","url":"https://github.com/DataTalksClub/llm-zoomcamp","scope":"先理解关键词检索、向量检索、混合检索和 rerank 的作用边界；实现代码暂时只读。","metaId":"llmzoom"},
-    "37": {"name":"LLM Zoomcamp：RAG 基线","url":"https://github.com/DataTalksClub/llm-zoomcamp","scope":"只看 ingestion、retrieval、prompt、answer 与引用的最小链路，再用 Go/Eino 复现。","metaId":"llmzoom"},
-    "38": {"name":"LLM Zoomcamp：检索改进","url":"https://github.com/DataTalksClub/llm-zoomcamp","scope":"只看 query rewriting、hybrid search、rerank 与失败回退；以评测结果决定是否采用。","metaId":"llmzoom"},
-    "39": {"name":"LLM Zoomcamp：RAG Evaluation","url":"https://github.com/DataTalksClub/llm-zoomcamp","scope":"只看 retrieval/RAG offline evaluation 与 monitoring，先做小而固定的评测集。","metaId":"llmzoom"},
-    "41": {"name":"小林：Tool Calling 入门","url":"https://xiaolinnote.com/agent/","scope":"只看 Function Calling、工具 schema、参数校验与失败处理；先做只读工具。","metaId":"xiaolin"},
-    "42": {"name":"Anthropic：Building Effective Agents","url":"https://www.anthropic.com/engineering/building-effective-agents","scope":"先看 workflow 与 agent 的区别，以及 routing、parallel、orchestrator、evaluator 四种模式。","metaId":"anthropic"},
-    "43": {"name":"小林：MCP 入门","url":"https://xiaolinnote.com/agent/","scope":"只看 MCP 的 client/server、tools/resources/prompts 与传输；先建立协议全景。","metaId":"xiaolin"},
-    "44": {"name":"Hugging Face Agents Course：Unit 1","url":"https://huggingface.co/learn/agents-course/unit1/introduction","scope":"只学 agent loop、messages、tools、observe/act；Python 示例只读，再用 Eino 复现。","metaId":"hfagents"},
-    "45": {"name":"小林：Agent 安全导读","url":"https://xiaolinnote.com/agent/","scope":"先理解提示词注入、越权工具调用、敏感信息泄露和人工确认，再读安全清单。","metaId":"xiaolin"},
-    "46": {"name":"Hugging Face Agents Course：评测与可观测性","url":"https://huggingface.co/learn/agents-course/unit4/introduction","scope":"只看轨迹、评测集、失败归因和 final project rubric；实现仍用 Go/Eino。","metaId":"hfagents"}
+    "35": {"name":"Datawhale：知识库搭建与向量检索","url":"https://datawhalechina.github.io/llm-universe/","scope":"只看知识库搭建中的文档加载、切分、Embedding、向量数据库和检索；Python 代码理解流程即可。","metaId":"datawhale-rag"},
+    "36": {"name":"Datawhale：检索与 RAG 进阶","url":"https://datawhalechina.github.io/llm-universe/","scope":"只看检索优化、召回精排和 RAG 进阶技巧；把关键词、向量、混合检索与 rerank 画成一条链。","metaId":"datawhale-rag"},
+    "37": {"name":"Datawhale：构建知识库 RAG 应用","url":"https://datawhalechina.github.io/llm-universe/","scope":"只看知识库搭建、检索问答链和应用构建；用 Go/Eino 复现加载、检索、生成、引用与拒答。","metaId":"datawhale-rag"},
+    "38": {"name":"Datawhale：RAG 开发技巧与优化","url":"https://datawhalechina.github.io/llm-universe/","scope":"只看 Prompt、检索优化、召回精排和 Agent 框架相关进阶内容；每次只为一个已观察到的失败加策略。","metaId":"datawhale-rag"},
+    "39": {"name":"Datawhale：验证迭代与 RAG 评估","url":"https://datawhalechina.github.io/llm-universe/","scope":"只看验证迭代和一般评估方法；建立检索、生成、端到端三层固定评测集。","metaId":"datawhale-rag"},
+    "41": {"name":"Datawhale《从零开始构建智能体》：工具与框架","url":"https://hello-agents.datawhale.cc","scope":"只看工具调用和构建 Agent 框架相关章节；重点学习工具 schema、参数校验、失败处理与权限边界。","metaId":"datawhale-agents"},
+    "42": {"name":"Datawhale《从零开始构建智能体》：经典范式","url":"https://hello-agents.datawhale.cc","scope":"只看第四章 ReAct、Plan-and-Solve、Reflection；比较确定性 Workflow 和自主 Agent 的适用边界。","metaId":"datawhale-agents"},
+    "43": {"name":"Datawhale《从零开始构建智能体》：通信协议","url":"https://hello-agents.datawhale.cc","scope":"只看第十章 MCP、A2A、ANP 中的 MCP 部分；重点理解 host、client、server、tools、resources 与信任边界。","metaId":"datawhale-agents"},
+    "44": {"name":"Datawhale《从零开始构建智能体》：记忆与上下文","url":"https://hello-agents.datawhale.cc","scope":"只看第八章记忆与检索、第九章上下文工程；区分会话、摘要、知识库和长期记忆。","metaId":"datawhale-agents"},
+    "45": {"name":"小林：Agent 安全导读","url":"https://xiaolinnote.com/agent/","scope":"先理解提示词注入、越权工具调用、敏感信息泄露和人工确认；安全清单与协议细节放在旁边核对。","metaId":"xiaolin"},
+    "46": {"name":"Datawhale《从零开始构建智能体》：性能评估","url":"https://hello-agents.datawhale.cc","scope":"只看第十二章智能体性能评估；建立轨迹、成本、成功率、失败归因和固定回归集。","metaId":"datawhale-agents"},
+    "47": {"name":"Datawhale《从零开始构建智能体》：综合项目","url":"https://hello-agents.datawhale.cc","scope":"参考第十三至十五章的项目拆解方式；只借鉴任务分层、工具编排和评测闭环，项目仍实现只读 OnCall Agent。","metaId":"datawhale-agents"}
   },  "extras": {
     "12": [
       {
@@ -311,16 +374,17 @@ window.COURSE_CURATION_V3={
     ],
     "15": [
       {
-        "name": "Confluent Kafka 101",
-        "url": "https://developer.confluent.io/courses/apache-kafka/",
-        "scope": "完成 Fundamentals：topics、partitions、brokers、producer、consumer、offset。"
+        "name": "IBM Sarama：Go Kafka 示例",
+        "url": "https://github.com/IBM/sarama/tree/main/examples",
+        "scope": "只看 producer、consumer group 与 offset 相关示例；用于完成本周最小实验，不通读仓库。",
+        "metaId": "sarama"
       }
     ],
     "16": [
       {
-        "name": "go-zero ShortURL（仅作实现参考）",
-        "url": "https://github.com/zeromicro/zero-doc/blob/main/doc/shorturl-en.md",
-        "scope": "只看架构和 API/RPC 拆分；官方明确它不是生产实现。"
+        "name": "go-zero 中文微服务系统示例（仅作架构参考）",
+        "url": "https://go-zero.dev/zh-cn/examples/microservice-system/",
+        "scope": "只看 API/RPC、服务发现、配置与链路追踪怎样组合；它不是 ShortLink 的生产模板。"
       }
     ],
     "18": [

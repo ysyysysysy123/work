@@ -18,6 +18,7 @@ let externalResources = 0;
 let localEvidenceResources = 0;
 let minLoad = Infinity;
 let maxLoad = 0;
+let totalMidLoad = 0;
 
 function taskParts(raw) {
   const parts = String(raw).split("｜");
@@ -52,10 +53,14 @@ course.weeks.forEach((week, index) => {
   if (!declared) errors.push(`W${weekNo}: invalid declared hours`);
   else if (taskHours < Number(declared[1]) - 0.01 || taskHours > Number(declared[2]) + 0.01) errors.push(`W${weekNo}: task hours ${taskHours} outside ${week.hours}`);
 
-  const totalLow = taskHours + 1 + 1.5;
-  const totalHigh = taskHours + 1 + 2;
+  const isReviewWeek = [8, 16, 24, 32, 40, 48, 52].includes(weekNo);
+  const coreLow = declared ? Number(declared[1]) : taskHours;
+  const coreHigh = declared ? Number(declared[2]) : taskHours;
+  const totalLow = coreLow + (isReviewWeek ? 0 : 1) + 1.5;
+  const totalHigh = coreHigh + (isReviewWeek ? 0 : 1) + 2;
   minLoad = Math.min(minLoad, totalLow);
   maxLoad = Math.max(maxLoad, totalHigh);
+  totalMidLoad += (totalLow + totalHigh) / 2;
   if (totalHigh > 18) errors.push(`W${weekNo}: estimated load ${totalHigh}h exceeds 18h capacity`);
 
   for (const resource of week.resources) {
@@ -99,6 +104,7 @@ console.log(JSON.stringify({
   externalResourceEntries: externalResources,
   localEvidenceEntries: localEvidenceResources,
   estimatedWeeklyLoadHours: `${minLoad}–${maxLoad}`,
+  averageWeeklyLoadHours: Number((totalMidLoad / course.weeks.length).toFixed(1)),
   learnerCapacityHours: system.learner.capacity,
   errors,
   warnings

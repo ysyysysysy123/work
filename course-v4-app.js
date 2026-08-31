@@ -18,6 +18,7 @@
   };
 
   let currentWeek = Math.min(52, Math.max(1, Number(storage.get("v4-current-week", "1")) || 1));
+  let expandedPhase = Number(storage.get("v9-expanded-phase", phaseFor(currentWeek).no)) || 0;
 
   function escapeHTML(value) {
     return String(value ?? "").replace(/[&<>'"]/g, char => ({
@@ -100,28 +101,27 @@
     const guide = curation.guides && curation.guides[String(weekNo)];
     const extras = (curation.extras && curation.extras[String(weekNo)]) || [];
     const base = [...(week.resources || []), ...extras];
-    const resources = [];
-    if (guide) resources.push({ ...guide, role: "讲解先读", roleNote: "先建立直觉，不要求通读整站" });
-    const second = base
-      .filter(item => !guide || item.url !== guide.url)
-      .sort((a, b) => authorityScore(b) - authorityScore(a))[0];
-    if (second) resources.push({
-      ...second,
-      role: second.url ? (guide ? "权威核对" : "本周主资料") : "本地证据",
-      roleNote: second.url ? (guide ? "用来确认机制、API 和边界" : "只看指定范围") : "本周不新增阅读"
-    });
-    if (!guide && resources.length < 2 && base[1]) resources.push({ ...base[1], role: "补充核对", roleNote: "遇到卡点再打开" });
-    return resources.slice(0, 2);
+    const ranked = [...base].sort((a, b) => authorityScore(b) - authorityScore(a));
+    const primary = guide
+      ? { ...guide, role: "本周唯一主资料", roleNote: "默认只读这一份" }
+      : ranked[0]
+        ? { ...ranked[0], role: ranked[0].url ? "本周唯一主资料" : "本周唯一主证据", roleNote: ranked[0].url ? "只看指定范围" : "本周不新增阅读" }
+        : { name: "本周任务与已有代码", scope: "只使用本页任务说明和自己的代码、测试、错题记录", role: "本周唯一主证据", roleNote: "本周不新增阅读" };
+    const references = ranked
+      .filter(item => item.url && item.url !== primary.url)
+      .slice(0, 2)
+      .map(item => ({ ...item, role: authorityScore(item) >= 10 ? "官方核对" : "补充核对" }));
+    return { primary, references };
   }
 
-  function resourceCard(resource, resourceIndex, resources, week) {
+  function resourceCard(resource, week) {
     const meta = sourceMeta(resource);
-    const route = guidance.resourceLinks(resource, resourceIndex, resources.length, week);
+    const route = guidance.resourceLinks(resource, 0, 1, week);
     return `
-      <article class="resource-card">
+      <article class="resource-card resource-card-primary">
         <div class="resource-role"><span>${escapeHTML(resource.role)}</span><em>${escapeHTML(resource.roleNote)}</em></div>
         <h4>${escapeHTML(resource.name)}</h4>
-        <div class="resource-route"><span>R${resourceIndex + 1}</span><span>对应 ${route.points.join(" / ")}</span><span>读完做 ${route.task}</span><span>用 ${route.question} 自检</span></div>
+        <div class="resource-route"><span>M1</span><span>对应 ${route.points.join(" / ")}</span><span>用于开始本周任务</span><span>主资料够用就不再切换</span></div>
         <p class="resource-scope"><strong>只看：</strong>${escapeHTML(resource.scope || "本周任务涉及的章节")}</p>
         <p class="resource-stop"><strong>看到哪里停止：</strong>${escapeHTML(route.stop)}</p>
         <div class="resource-meta">
@@ -130,9 +130,20 @@
           <span>${escapeHTML(meta?.cost || "免费")}</span>
         </div>
         ${resource.url
-          ? `<a class="resource-link" href="${escapeHTML(resource.url)}" target="_blank" rel="noreferrer">打开资料 <span aria-hidden="true">↗</span></a>`
+          ? `<a class="resource-link" href="${escapeHTML(resource.url)}" target="_blank" rel="noreferrer">打开主资料 <span aria-hidden="true">↗</span></a>`
           : `<span class="resource-link is-local">使用自己的代码、错题和记录 <span aria-hidden="true">✓</span></span>`}
       </article>`;
+  }
+
+  function referenceRail(references) {
+    return `<aside class="reference-rail">
+      <div class="reference-rail-head"><div><span>备用核对链接</span><strong>默认不读</strong></div><em>主资料缺内容或结论拿不准时才打开</em></div>
+      ${references.length ? `<div class="reference-links">${references.map(resource => `
+        <a href="${escapeHTML(resource.url)}" target="_blank" rel="noreferrer">
+          <span><strong>${escapeHTML(resource.name)}</strong><small>${escapeHTML(resource.scope || "只核对本周涉及的机制、API 或边界")}</small></span>
+          <em>${escapeHTML(resource.role)} ↗</em>
+        </a>`).join("")}</div>` : `<p class="reference-empty">本周没有额外资料。完成主资料和任务即可。</p>`}
+    </aside>`;
   }
 
   function weekProgress(weekNo) {
@@ -162,10 +173,21 @@
       const active = currentWeek >= phase.weeks[0] && currentWeek <= phase.weeks[1];
       const passed = Array.from({ length: phase.weeks[1] - phase.weeks[0] + 1 }, (_, i) => phase.weeks[0] + i)
         .filter(no => storage.get(`v4-gate-${no}`) === "1").length;
-      return `<button class="phase-rail-item ${active ? "is-active" : ""}" data-week="${phase.weeks[0]}">
-        <span class="phase-rail-no">${phase.no}</span>
-        <span><strong>${escapeHTML(phase.title)}</strong><small>${phase.range} · ${passed}/${phase.weeks[1] - phase.weeks[0] + 1} 通过</small></span>
-      </button>`;
+      const expanded = expandedPhase === Number(phase.no);
+      const weeks = expanded ? Array.from({ length: phase.weeks[1] - phase.weeks[0] + 1 }, (_, i) => phase.weeks[0] + i)
+        .map(no => {
+          const week = course.weeks[no - 1];
+          const isCurrent = no === currentWeek;
+          const isPassed = storage.get(`v4-gate-${no}`) === "1";
+          return `<button class="phase-week-item ${isCurrent ? "is-current" : ""} ${isPassed ? "is-passed" : ""}" data-week="${no}" title="W${no} ${escapeHTML(week.title)}"><span>W${no}</span><strong>${escapeHTML(week.title)}</strong></button>`;
+        }).join("") : "";
+      return `<div class="phase-rail-group ${active ? "is-active" : ""} ${expanded ? "is-expanded" : ""}">
+        <button class="phase-rail-item ${active ? "is-active" : ""}" data-phase-toggle="${phase.no}" aria-expanded="${expanded}">
+          <span class="phase-rail-no">${phase.no}</span>
+          <span><strong>${escapeHTML(phase.title)}</strong><small>${phase.range} · ${passed}/${phase.weeks[1] - phase.weeks[0] + 1} 通过</small></span>
+        </button>
+        ${expanded ? `<div class="phase-week-list" aria-label="${escapeHTML(phase.title)}每周导航">${weeks}</div>` : ""}
+      </div>`;
     }).join("");
   }
 
@@ -182,10 +204,18 @@
     const week = course.weeks[currentWeek - 1];
     const phase = phaseFor(currentWeek);
     const project = projectFor(currentWeek);
-    const resources = selectedResources(currentWeek, week);
+    const resourceSet = selectedResources(currentWeek, week);
     const progress = weekProgress(currentWeek);
     const global = allGateProgress();
     const phaseIndex = system.phases.indexOf(phase);
+    const previousWeek = currentWeek > 1 ? course.weeks[currentWeek - 2] : null;
+    const nextWeek = currentWeek < 52 ? course.weeks[currentWeek] : null;
+    const isReviewWeek = [8, 16, 24, 32, 40, 48, 52].includes(currentWeek);
+    const coreRange = (week.hours.match(/[0-9]+(?:\.[0-9]+)?/g) || ["0"]).map(Number);
+    const weeklyLow = coreRange[0] + (isReviewWeek ? 0 : 1) + 1.5;
+    const weeklyHigh = (coreRange[1] || coreRange[0]) + (isReviewWeek ? 0 : 1) + 2;
+    const freeLow = Math.max(0, 16 - weeklyHigh);
+    const freeHigh = Math.max(0, 18 - weeklyLow);
 
     $("#currentWeekLabel").textContent = `第 ${currentWeek} 周 / 52`;
     $("#globalProgressText").textContent = `${global.passed}/52 周通过验收`;
@@ -202,7 +232,7 @@
         <p>${escapeHTML(week.outcome)}</p>
         <div class="week-badges">
           <span>核心 ${escapeHTML(week.hours)}</span>
-          <span>验收约 1h</span>
+          <span>${isReviewWeek ? "验收已包含在核心时长" : "验收约 1h"}</span>
           <span>算法保底 1.5–2h</span>
           <span>难度：${escapeHTML(phase.bloom)}</span>
           ${project ? `<span>项目：${escapeHTML(project.title)}</span>` : ""}
@@ -212,12 +242,13 @@
       <section class="purpose-panel section-panel" id="purpose">
         <div class="section-index">01</div>
         <div class="section-body">
-          <div class="section-title-row"><div><span class="eyebrow">先理解位置</span><h2>这周在全年中的作用</h2></div><span class="phase-pill">阶段 ${phaseIndex + 1}/7</span></div>
+          <div class="section-title-row"><div><span class="eyebrow">每周独立变化</span><h2>本周的前后关系</h2></div><span class="phase-pill">W${currentWeek} · 阶段 ${phaseIndex + 1}/7</span></div>
+          <div class="phase-context-line"><strong>${escapeHTML(phase.range)} · ${escapeHTML(phase.title)}</strong><span>${escapeHTML(phase.question)}</span></div>
           <div class="purpose-grid">
-            <article><small>阶段核心问题</small><p>${escapeHTML(phase.question)}</p></article>
-            <article><small>为什么现在学</small><p>${escapeHTML(phase.why)}</p></article>
-            <article><small>阶段完成证据</small><p>${escapeHTML(phase.outcome)}</p></article>
-            <article><small>对应训练营能力</small><p>${escapeHTML(phase.xiaolin)}</p></article>
+            <article><small>从哪里接过来</small><p>${previousWeek ? `承接 W${currentWeek - 1}「${escapeHTML(previousWeek.title)}」；现在把上一周的结论用于新的问题。` : "从你的 1 年 Go 工作经验出发，先建立全年统一的代码与证据基线。"}</p></article>
+            <article><small>本周只解决什么</small><p>${escapeHTML(week.outcome)}</p></article>
+            <article><small>完成后留下什么</small><p>${escapeHTML(week.gate)}</p></article>
+            <article><small>为下一周准备什么</small><p>${nextWeek ? `为 W${currentWeek + 1}「${escapeHTML(nextWeek.title)}」准备可复用的代码、测试和判断依据。` : "收束全年代码、项目证据和面试表达，形成可持续迭代的下一年基线。"}</p></article>
           </div>
           ${project ? `<div class="project-strip"><strong>${escapeHTML(project.type)} · ${escapeHTML(project.title)}</strong><span>${escapeHTML(project.question)}</span><em>本阶段里程碑 ${currentWeek - phase.weeks[0] + 1}/${phase.weeks[1] - phase.weeks[0] + 1}</em></div>` : ""}
         </div>
@@ -226,7 +257,15 @@
       <section class="section-panel" id="tasks">
         <div class="section-index">02</div>
         <div class="section-body">
-          <div class="section-title-row"><div><span class="eyebrow">读完资料后实操</span><h2>每项都说明含义、步骤和交付物</h2></div><span class="load-pill">工作忙时只做 T1，再顺延 T2/T3</span></div>
+          <div class="section-title-row"><div><span class="eyebrow">本周实战交付</span><h2>把学习点变成可运行、可测试的证据</h2></div><span class="load-pill">${isReviewWeek ? "验收周不学新内容；按 T1 → T2 → T3 → T4 收口" : "工作忙时只做 T1，再顺延 T2/T3"}</span></div>
+          <div class="task-purpose">
+            <strong>04 主要做什么？</strong>
+            <p>${currentWeek === 24
+              ? "这是 W17–W23 的阶段验收，不是新学六套系统。先给六类题各做一张 20 分钟骨架；再随机抽一题完整设计；只围绕同一题接受追问；最后只修最低分项。整周只完整做一题。"
+              : currentWeek === 15
+              ? "用一个最小 Kafka 实验完成“先理解分区与 offset → 再故意制造重复消费 → 最后用幂等与 Outbox 修复”的完整闭环。不是搭生产集群，也不是再读一套新课程。"
+              : `把 02 的学习点和 03 的主资料，转化成本周可以检查的代码、测试、图或报告。这里不是新增课程；做完任务并通过下方验收，才算真的掌握“${escapeHTML(week.outcome)}”。`}</p>
+          </div>
           <div class="task-list">
             ${week.tasks.map((raw, index) => {
               const task = taskParts(raw);
@@ -246,7 +285,7 @@
               </article>`;
             }).join("")}
           </div>
-          <div class="capacity-note"><strong>时间边界</strong><span>核心任务 ${escapeHTML(week.hours)} + 闭卷验收约 1h + 算法保底 1.5–2h。总计通常 12.5–15h，余下时间用于工作繁忙缓冲或补弱，不再塞新知识。</span></div>
+          <div class="capacity-note"><strong>本周总预算约 ${weeklyLow}–${weeklyHigh}h</strong><span>核心任务 ${escapeHTML(week.hours)} + ${isReviewWeek ? "验收已计入核心任务" : "闭卷验收约 1h"} + 算法保底 1.5–2h。按你每周可用 16–18h，仍留约 ${freeLow}–${freeHigh}h 给加班、卡点和补弱；不再塞新知识。</span></div>
         </div>
       </section>
 
@@ -256,7 +295,7 @@
           <div class="section-title-row"><div><span class="eyebrow">本周学习路线</span><h2>先知道学什么，再按编号往下走</h2></div><span class="count-pill">${week.lecture.length} 个学习点</span></div>
           <div class="week-route">
             <article class="route-step"><span>STEP 1 · L</span><strong>明确学习点</strong><small>只学下面 L1–L${week.lecture.length}</small></article>
-            <article class="route-step"><span>STEP 2 · R</span><strong>按范围读资料</strong><small>先 R1 讲解，再 R2 核对</small></article>
+            <article class="route-step"><span>STEP 2 · M</span><strong>只跟一份主资料</strong><small>默认只读 M1；缺口再查备用链接</small></article>
             <article class="route-step"><span>STEP 3 · T</span><strong>完成实操</strong><small>T1 → T2 → T3，不另拆计划</small></article>
             <article class="route-step"><span>STEP 4 · Q</span><strong>关资料验收</strong><small>能回答 Q 并满足 Gate 才进入下周</small></article>
           </div>
@@ -271,9 +310,9 @@
       <section class="section-panel" id="resources">
         <div class="section-index">04</div>
         <div class="section-body">
-          <div class="section-title-row"><div><span class="eyebrow">已筛选资料</span><h2>先讲解，后核对；最多两份</h2></div><span class="verified-pill">核查于 ${escapeHTML(curation.verifiedAt || "2026-08-29")}</span></div>
-          <div class="resource-grid">${resources.map((resource, index) => resourceCard(resource, index, resources, week)).join("")}</div>
-          <p class="resource-rule">${escapeHTML(curation.rule || "资料只服务于本周产出，不要求通读整个网站。")}</p>
+          <div class="section-title-row"><div><span class="eyebrow">已筛选资料</span><h2>本周只跟一份主资料</h2></div><span class="verified-pill">核查于 ${escapeHTML(curation.verifiedAt || "2026-08-29")}</span></div>
+          <div class="resource-layout">${resourceCard(resourceSet.primary, week)}${referenceRail(resourceSet.references)}</div>
+          <p class="resource-rule">${escapeHTML(curation.rule || "默认只读主资料；只有主资料未覆盖或结论拿不准时，才打开备用核对链接。")}</p>
         </div>
       </section>
 
@@ -502,6 +541,8 @@
 
   function setWeek(no, shouldScroll = true) {
     currentWeek = Math.min(52, Math.max(1, Number(no)));
+    expandedPhase = Number(phaseFor(currentWeek).no);
+    storage.set("v9-expanded-phase", expandedPhase);
     storage.set("v4-current-week", currentWeek);
     renderPhaseRail();
     renderWeekGrid();
@@ -513,6 +554,15 @@
   }
 
   function bindNavigationButtons() {
+    $$("[data-phase-toggle]").forEach(button => {
+      button.onclick = () => {
+        const phaseNo = Number(button.dataset.phaseToggle);
+        expandedPhase = expandedPhase === phaseNo ? 0 : phaseNo;
+        storage.set("v9-expanded-phase", expandedPhase);
+        renderPhaseRail();
+        bindNavigationButtons();
+      };
+    });
     $$("[data-week]").forEach(button => {
       button.onclick = () => setWeek(Number(button.dataset.week));
     });
