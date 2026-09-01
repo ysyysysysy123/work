@@ -5,6 +5,7 @@
   const curation = window.COURSE_CURATION_V3 || {};
   const system = window.COURSE_SYSTEM_V4;
   const guidance = window.COURSE_GUIDANCE_V6;
+  const interviewData = window.INTERVIEW_RADAR_V10 || null;
   if (!course || !system) return;
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -17,7 +18,8 @@
     set(key, value) { try { localStorage.setItem(key, String(value)); } catch (_) {} }
   };
 
-  let currentWeek = Math.min(52, Math.max(1, Number(storage.get("v4-current-week", "1")) || 1));
+  const hashWeek = Number((location.hash.match(/^#W(\d+)$/i) || [])[1]);
+  let currentWeek = Math.min(52, Math.max(1, hashWeek || Number(storage.get("v4-current-week", "1")) || 1));
   let expandedPhase = Number(storage.get("v9-expanded-phase", phaseFor(currentWeek).no)) || 0;
 
   function escapeHTML(value) {
@@ -43,6 +45,31 @@
   }
 
   const algorithmPlan = window.ALGORITHM_PLAN_V5;
+
+  function interviewSource(id) {
+    return interviewData && interviewData.sources.find(source => source.id === id);
+  }
+
+  function interviewCheckMarkup(weekNo) {
+    const item = interviewData && interviewData.weeks[weekNo - 1];
+    if (!item) return "";
+    const key = `v10-interview-${weekNo}`;
+    const checked = storage.get(key) === "1";
+    const sources = item.sourceIds.map(interviewSource).filter(Boolean);
+    return `
+      <article class="interview-check ${checked ? "is-done" : ""}">
+        <div class="interview-check-head">
+          <div><span class="eyebrow">近两年社招迁移题</span><h3>${escapeHTML(item.kind)}</h3></div>
+          <span>10–15 分钟 · 已包含在本周验收时间内</span>
+        </div>
+        <p class="interview-prompt">${escapeHTML(item.prompt)}</p>
+        <div class="interview-must"><strong>回答至少覆盖</strong>${item.must.map(point => `<span>${escapeHTML(point)}</span>`).join("")}</div>
+        <label class="interview-done"><input type="checkbox" data-save="${key}" ${checked ? "checked" : ""}><span class="check-ui"></span><span><b>已关掉资料独立完成</b><small>辅助检查，不新增阅读，也不单独阻塞本周 Gate。</small></span></label>
+        <details class="interview-evidence"><summary>这道题为什么放在本周 · 查看面经依据</summary>
+          <div>${sources.map(source => `<a href="${escapeHTML(source.url)}" target="_blank" rel="noreferrer"><b>${escapeHTML(source.company)}</b><span>${escapeHTML(source.date)} · ${escapeHTML(source.platform)}</span><small>${escapeHTML(source.signal)}</small></a>`).join("")}</div>
+        </details>
+      </article>`;
+  }
 
   function algorithmProblem(id) {
     return algorithmPlan && algorithmPlan.catalog[String(id)];
@@ -327,6 +354,7 @@
               return `<label class="question-item ${checked ? "is-done" : ""}"><input type="checkbox" data-save="v4-answer-${currentWeek}-${index}" ${checked ? "checked" : ""}><span class="check-ui"></span><span>Q${index + 1}</span><p>${escapeHTML(question)}</p></label>`;
             }).join("")}
           </div>
+          ${interviewCheckMarkup(currentWeek)}
           <div class="gate-grid">
             <article class="gate-card"><small>通过门槛 / PROCEED</small><p>${escapeHTML(week.gate)}</p></article>
             <article class="repair-card"><small>未通过 / REPAIR</small><p>${escapeHTML(week.repair)}</p></article>
@@ -368,7 +396,7 @@
   function bindWeekInputs() {
     $$('[data-save]').forEach(input => input.addEventListener("change", event => {
       storage.set(event.currentTarget.dataset.save, event.currentTarget.checked ? "1" : "0");
-      const visualTarget = event.currentTarget.closest(".algo-item") || event.currentTarget.closest(".task-item") || event.currentTarget.closest("label");
+      const visualTarget = event.currentTarget.closest(".interview-check") || event.currentTarget.closest(".algo-item") || event.currentTarget.closest(".task-item") || event.currentTarget.closest("label");
       visualTarget?.classList.toggle("is-done", event.currentTarget.checked);
       if (event.currentTarget.dataset.save.startsWith("v4-gate")) event.currentTarget.closest("label")?.classList.toggle("is-passed", event.currentTarget.checked);
       refreshProgressOnly();
@@ -417,6 +445,38 @@
     bindNavigationButtons();
   }
 
+  function interviewMapMarkup() {
+    if (!interviewData) return "";
+    return `
+      <section class="recent-interview-map">
+        <div class="recent-interview-head">
+          <div><span class="eyebrow">RECENT SOCIAL-HIRE SIGNALS</span><h3>近两年大厂社招面经，如何融入全年</h3></div>
+          <p>采样 ${escapeHTML(interviewData.sampleWindow)} · 核对于 ${escapeHTML(interviewData.verifiedAt)}。它不是新增课程，而是给原 52 周增加真实面试追问。</p>
+        </div>
+        <div class="interview-theme-grid">
+          ${interviewData.themes.map(theme => `<article>
+            <div><span>${escapeHTML(theme.weeks)}</span><em>${escapeHTML(theme.level)}</em></div>
+            <h4>${escapeHTML(theme.name)}</h4>
+            <p>${escapeHTML(theme.evidence)}</p>
+            <small>本课程怎么处理：${escapeHTML(theme.action)}</small>
+          </article>`).join("")}
+        </div>
+        <details class="interview-source-library">
+          <summary><span>查看已核对的面经与岗位样本</span><strong>${interviewData.sources.length} 份集中管理，不要求逐篇阅读</strong></summary>
+          <div class="interview-source-list">
+            ${interviewData.sources.map(source => `<a href="${escapeHTML(source.url)}" target="_blank" rel="noreferrer">
+              <span class="source-meta"><b>${escapeHTML(source.company)}</b><em>${escapeHTML(source.date)} · ${escapeHTML(source.platform)}</em></span>
+              <strong>${escapeHTML(source.title)}</strong>
+              <p>${escapeHTML(source.signal)}</p>
+              <small>使用边界：${escapeHTML(source.reliability)}</small>
+              <span class="source-tags">${source.tags.map(tag => `<i>${escapeHTML(tag)}</i>`).join("")}</span>
+            </a>`).join("")}
+          </div>
+        </details>
+        <p class="interview-caveat"><b>可信度边界：</b>${escapeHTML(interviewData.caveat)}</p>
+      </section>`;
+  }
+
   function renderAudit() {
     let audit = $("#curriculumAudit");
     if (!audit) {
@@ -439,7 +499,8 @@
         <div class="radar-grid">
           ${system.interviewRadar.map(item => `<article class="radar-card" data-level="${escapeHTML(item.level)}"><div class="radar-card-top"><h4>${escapeHTML(item.area)}</h4><span class="radar-level">${escapeHTML(item.level)}</span></div><span class="radar-weeks">${escapeHTML(item.weeks)}</span><div class="radar-topics">${item.topics.map(topic => `<span>${escapeHTML(topic)}</span>`).join("")}</div></article>`).join("")}
         </div>
-      </div>`;
+      </div>
+      ${interviewMapMarkup()}`;
   }
 
   function renderAlgorithmRoadmap() {
@@ -466,11 +527,15 @@
   function showRoadmap() {
     const roadmap = $("#roadmap");
     roadmap.classList.remove("is-collapsed");
-    requestAnimationFrame(() => roadmap.scrollIntoView({ behavior: "smooth", block: "start" }));
+    document.body.classList.add("map-open");
+    roadmap.scrollTop = 0;
+    const select = $("#mapWeekSelect");
+    if (select) select.value = String(currentWeek);
   }
 
   function hideRoadmap(shouldScroll = true) {
     $("#roadmap").classList.add("is-collapsed");
+    document.body.classList.remove("map-open");
     if (shouldScroll) $(".layout").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -479,7 +544,7 @@
     roadmap.classList.add("roadmap-front", "is-collapsed");
     $(".topbar").after(roadmap);
     $(".roadmap-head h2").textContent = "全年地图、课程审计与面试覆盖";
-    $(".roadmap-head p").textContent = "点击 01–07 展开阶段周目录；选中某周后地图会自动收起，并回到该周工作台。";
+    $(".roadmap-head p").textContent = "顶部可直接选择 W01–W52；也可先展开 01–07 阶段，再点周卡片。选周后自动回到该周工作台。";
     if (!$("#closeRoadmap")) {
       const close = document.createElement("button");
       close.id = "closeRoadmap";
@@ -487,6 +552,19 @@
       close.type = "button";
       close.textContent = "收起地图 ×";
       $(".roadmap-head").appendChild(close);
+    }
+    if (!$("#mapQuickNav")) {
+      const nav = document.createElement("div");
+      nav.id = "mapQuickNav";
+      nav.className = "map-quick-nav";
+      nav.innerHTML = `
+        <button type="button" id="mapCurrentWeek">回到当前周 W${currentWeek}</button>
+        <label><span>直接跳到</span><select id="mapWeekSelect" aria-label="选择周次">
+          ${course.weeks.map((week, index) => `<option value="${index + 1}">W${String(index + 1).padStart(2, "0")} · ${escapeHTML(week.title)}</option>`).join("")}
+        </select></label>
+        <button type="button" id="mapGoWeek">进入所选周 →</button>
+        <small>也可以先选 01–07 阶段，再点下面的周卡片。按 Esc 随时关闭。</small>`;
+      $(".roadmap-head").after(nav);
     }
 
     $("#phaseMap").innerHTML = system.phases.map((phase, index) => `
@@ -537,6 +615,13 @@
       button.onclick = () => renderPhaseExplorer(Number(button.dataset.phase));
     });
     $("#closeRoadmap").onclick = () => hideRoadmap();
+    $("#mapCurrentWeek").onclick = () => setWeek(currentWeek);
+    $("#mapGoWeek").onclick = () => setWeek(Number($("#mapWeekSelect").value));
+    $("#mapWeekSelect").value = String(currentWeek);
+    $("#mapWeekSelect").onchange = event => {
+      const selectedWeek = Number(event.currentTarget.value);
+      renderPhaseExplorer(system.phases.indexOf(phaseFor(selectedWeek)));
+    };
   }
 
   function setWeek(no, shouldScroll = true) {
@@ -544,6 +629,9 @@
     expandedPhase = Number(phaseFor(currentWeek).no);
     storage.set("v9-expanded-phase", expandedPhase);
     storage.set("v4-current-week", currentWeek);
+    try { history.replaceState(null, "", `#W${currentWeek}`); } catch (_) {}
+    if ($("#mapWeekSelect")) $("#mapWeekSelect").value = String(currentWeek);
+    if ($("#mapCurrentWeek")) $("#mapCurrentWeek").textContent = `回到当前周 W${currentWeek}`;
     renderPhaseRail();
     renderWeekGrid();
     renderCurrentWeek();
@@ -572,6 +660,9 @@
   $("#nextWeek").addEventListener("click", () => setWeek(currentWeek + 1));
   $("#openRoadmap").addEventListener("click", showRoadmap);
   $("#backToWeek").addEventListener("click", () => hideRoadmap(true));
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !$("#roadmap").classList.contains("is-collapsed")) hideRoadmap(false);
+  });
 
   renderRoadmap();
   setWeek(currentWeek, false);

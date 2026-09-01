@@ -1,0 +1,342 @@
+/* V10: recent social-hire interview layer + full-screen annual map */
+body.map-open { overflow: hidden; }
+
+.roadmap.roadmap-front:not(.is-collapsed) {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: 100%;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 28px 56px;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 90% 0, rgba(47, 111, 235, .10), transparent 32rem),
+    #f4f6fa;
+}
+
+.roadmap-front .roadmap-head {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 22px 0 18px;
+  background: rgba(244, 246, 250, .94);
+  border-bottom: 1px solid #dbe2ec;
+  backdrop-filter: blur(16px);
+}
+
+.roadmap-front .roadmap-head h2 { margin-top: 2px; }
+.roadmap-front .roadmap-head p { max-width: 780px; }
+.roadmap-front .map-close {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid #cbd6e5;
+  border-radius: 10px;
+  background: #fff;
+  color: #22324a;
+  cursor: pointer;
+}
+
+.map-quick-nav {
+  display: grid;
+  grid-template-columns: auto minmax(300px, 1fr) auto minmax(220px, .7fr);
+  align-items: center;
+  gap: 12px;
+  max-width: 1500px;
+  margin: 20px auto;
+  padding: 14px;
+  border: 1px solid #d5deea;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(28, 43, 65, .08);
+}
+
+.map-quick-nav button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9px;
+  background: #2367d1;
+  color: #fff;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.map-quick-nav button:first-child {
+  border: 1px solid #bdd0ed;
+  background: #edf4ff;
+  color: #1757b0;
+}
+
+.map-quick-nav label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: #52647c;
+  font-size: .9rem;
+}
+
+.map-quick-nav select {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 38px 0 12px;
+  border: 1px solid #cbd6e5;
+  border-radius: 9px;
+  background: #fff;
+  color: #17243a;
+  font: inherit;
+  font-weight: 650;
+}
+
+.map-quick-nav small {
+  color: #6a7890;
+  line-height: 1.55;
+}
+
+.roadmap-front > .phase-map,
+.roadmap-front > .phase-explorer,
+.roadmap-front > .curriculum-audit,
+.roadmap-front > .map-deep-dive,
+.roadmap-front > .back-wrap {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.interview-check {
+  margin: 22px 0;
+  padding: 20px;
+  border: 1px solid #cfe0f8;
+  border-left: 4px solid #2f6feb;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f8fbff 0%, #fff 75%);
+}
+
+.interview-check.is-done {
+  border-color: #b9dfcb;
+  border-left-color: #2b9c69;
+  background: linear-gradient(135deg, #f4fcf7 0%, #fff 75%);
+}
+
+.interview-check-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.interview-check-head h3 {
+  margin: 3px 0 0;
+  font-size: 1.08rem;
+}
+
+.interview-check-head > span {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eaf2ff;
+  color: #3163a9;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.interview-prompt {
+  margin: 16px 0;
+  color: #17243a;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.75;
+}
+
+.interview-must {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.interview-must strong { margin-right: 2px; color: #52647c; font-size: .84rem; }
+.interview-must span {
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: #edf3fb;
+  color: #315178;
+  font-size: .82rem;
+}
+
+.interview-done {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 14px;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.interview-done > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.interview-done small { color: #718096; }
+
+.interview-evidence {
+  margin-top: 12px;
+  border-top: 1px solid #dde6f2;
+}
+
+.interview-evidence summary {
+  padding: 13px 2px 2px;
+  color: #2367d1;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.interview-evidence > div {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.interview-evidence a {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 8px 12px;
+  padding: 12px;
+  border: 1px solid #dbe5f2;
+  border-radius: 9px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+}
+
+.interview-evidence a b { color: #1f5fae; }
+.interview-evidence a span { color: #718096; font-size: .82rem; }
+.interview-evidence a small { color: #4d5c72; line-height: 1.6; }
+
+.recent-interview-map {
+  margin-top: 24px;
+  padding: 28px;
+  border: 1px solid #d5deea;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.recent-interview-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 20px;
+}
+
+.recent-interview-head h3 { margin: 4px 0 0; font-size: 1.45rem; }
+.recent-interview-head p { max-width: 660px; margin: 0; color: #66758b; line-height: 1.65; }
+
+.interview-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.interview-theme-grid article {
+  padding: 16px;
+  border: 1px solid #dbe4ef;
+  border-radius: 12px;
+  background: #fbfcfe;
+}
+
+.interview-theme-grid article > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #2367d1;
+  font-size: .78rem;
+  font-weight: 750;
+}
+
+.interview-theme-grid em { color: #748198; font-style: normal; }
+.interview-theme-grid h4 { margin: 12px 0 7px; color: #17243a; }
+.interview-theme-grid p { margin: 0; color: #52647c; line-height: 1.58; font-size: .88rem; }
+.interview-theme-grid small { display: block; margin-top: 10px; color: #245f4b; line-height: 1.55; }
+
+.interview-source-library {
+  margin-top: 18px;
+  border: 1px solid #d6e0ed;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.interview-source-library > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 17px;
+  background: #f2f6fb;
+  color: #20314a;
+  cursor: pointer;
+}
+
+.interview-source-library > summary strong { color: #56708f; font-size: .82rem; }
+
+.interview-source-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+}
+
+.interview-source-list > a {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 15px;
+  border: 1px solid #dce5f0;
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.interview-source-list > a:hover {
+  border-color: #7fa8e5;
+  box-shadow: 0 8px 22px rgba(38, 80, 137, .10);
+}
+
+.source-meta { display: flex; justify-content: space-between; gap: 12px; color: #2367d1; }
+.source-meta em { color: #748198; font-style: normal; font-size: .78rem; }
+.interview-source-list p { margin: 0; color: #4d5d73; line-height: 1.55; font-size: .88rem; }
+.interview-source-list small { color: #7a6244; line-height: 1.5; }
+.source-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; }
+.source-tags i { padding: 3px 7px; border-radius: 999px; background: #eef3f9; color: #52647c; font-size: .72rem; font-style: normal; }
+
+.interview-caveat {
+  margin: 14px 2px 0;
+  color: #68778d;
+  line-height: 1.6;
+  font-size: .86rem;
+}
+
+@media (max-width: 1100px) {
+  .map-quick-nav { grid-template-columns: auto 1fr auto; }
+  .map-quick-nav small { grid-column: 1 / -1; }
+  .interview-theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .roadmap.roadmap-front:not(.is-collapsed) { padding: 0 12px 36px; }
+  .roadmap-front .roadmap-head { padding: 14px 0; }
+  .map-quick-nav { grid-template-columns: 1fr; margin: 12px auto; }
+  .map-quick-nav label { align-items: stretch; flex-direction: column; gap: 5px; }
+  .recent-interview-map { padding: 18px 14px; }
+  .recent-interview-head, .interview-check-head { align-items: stretch; flex-direction: column; }
+  .interview-theme-grid, .interview-source-list { grid-template-columns: 1fr; }
+  .interview-evidence a { grid-template-columns: 1fr; }
+  .interview-source-library > summary { align-items: flex-start; flex-direction: column; gap: 5px; }
+}

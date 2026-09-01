@@ -2,7 +2,7 @@ const fs = require("fs");
 const vm = require("vm");
 
 global.window = {};
-for (const file of ["course-v2-data.js", "course-v3-curation.js", "course-v4-system.js", "course-v5-algorithms.js", "course-v6-guidance.js"]) {
+for (const file of ["course-v2-data.js", "course-v3-curation.js", "course-v4-system.js", "course-v5-algorithms.js", "course-v6-guidance.js", "course-v10-interviews.js"]) {
   vm.runInThisContext(fs.readFileSync(file, "utf8"), { filename: file });
 }
 
@@ -11,6 +11,7 @@ const curation = window.COURSE_CURATION_V3;
 const system = window.COURSE_SYSTEM_V4;
 const algorithms = window.ALGORITHM_PLAN_V5;
 const guidance = window.COURSE_GUIDANCE_V6;
+const interviews = window.INTERVIEW_RADAR_V10;
 const errors = [];
 const warnings = [];
 let taskCount = 0;
@@ -84,6 +85,20 @@ for (const track of system.tracks) {
 }
 if (!system.learner.profile.includes("Go 后端开发约 1 年")) warnings.push("Go track starts at D but prior-experience rationale is missing");
 
+if (!interviews || interviews.weeks.length !== 52) errors.push(`Interview layer has ${interviews?.weeks?.length || 0} weeks`);
+if (interviews && interviews.themes.length !== 7) errors.push(`Interview layer has ${interviews.themes.length} themes, expected 7`);
+const interviewSourceIds = new Set((interviews?.sources || []).map(source => source.id));
+const interviewWeeks = new Set();
+for (const item of interviews?.weeks || []) {
+  interviewWeeks.add(item.week);
+  if (!item.prompt || item.must.length < 3 || !item.sourceIds.length) errors.push(`W${item.week}: incomplete interview transfer check`);
+  for (const sourceId of item.sourceIds) if (!interviewSourceIds.has(sourceId)) errors.push(`W${item.week}: unknown interview source ${sourceId}`);
+}
+if (interviewWeeks.size !== 52 || ![...interviewWeeks].every((week, index) => week === index + 1)) errors.push("Interview weeks are not a complete W1-W52 sequence");
+for (const source of interviews?.sources || []) {
+  try { new URL(source.url); } catch (_) { errors.push(`Interview source has invalid URL: ${source.url}`); }
+  if (!source.reliability || !source.signal || !source.date) errors.push(`Interview source ${source.id} lacks verification metadata`);
+}
 const allSources = fs.readFileSync("course-v2-data.js", "utf8") + fs.readFileSync("course-v3-curation.js", "utf8");
 if (allSources.includes("anthropic.com/research/building-effective-agents")) errors.push("Old Anthropic redirect remains");
 if (allSources.includes("opentelemetry.io/docs/specs/semconv/gen-ai/")) errors.push("Moved OpenTelemetry GenAI entry remains");
@@ -92,8 +107,9 @@ const template = fs.readFileSync("course-v4-template.html");
 const entry = fs.readFileSync("学习系统.html");
 if (!template.equals(entry)) errors.push("Entry HTML is not synchronized with template");
 const html = entry.toString("utf8");
-for (const ref of ["course-v7-readability.css", "course-v6-guidance.js", "course-v5-algorithms.js"]) if (!html.includes(ref)) errors.push(`Entry missing ${ref}`);
+for (const ref of ["course-v7-readability.css", "course-v6-guidance.js", "course-v5-algorithms.js", "course-v10-interviews.js", "course-v10-interviews.css"]) if (!html.includes(ref)) errors.push(`Entry missing ${ref}`);
 if (!fs.existsSync("course-v7-readability.css")) errors.push("Readability stylesheet missing");
+if (!fs.existsSync("course-v10-interviews.css")) errors.push("Interview stylesheet missing");
 
 console.log(JSON.stringify({
   weeks: course.weeks.length,
@@ -101,6 +117,9 @@ console.log(JSON.stringify({
   tasks: taskCount,
   algorithmCoreProblems: new Set(algorithms.weeks.flatMap(item => item.core)).size,
   algorithmReviewWeeks: reviewWeeks,
+  interviewSources: interviews.sources.length,
+  interviewWeeklyChecks: interviews.weeks.length,
+  interviewThemes: interviews.themes.length,
   externalResourceEntries: externalResources,
   localEvidenceEntries: localEvidenceResources,
   estimatedWeeklyLoadHours: `${minLoad}–${maxLoad}`,
