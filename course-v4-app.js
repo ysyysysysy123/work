@@ -6,6 +6,7 @@
   const system = window.COURSE_SYSTEM_V4;
   const guidance = window.COURSE_GUIDANCE_V6;
   const interviewData = window.INTERVIEW_RADAR_V10 || null;
+  const mediaData = window.COURSE_MEDIA_V11 || null;
   if (!course || !system) return;
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -134,10 +135,19 @@
       : ranked[0]
         ? { ...ranked[0], role: ranked[0].url ? "本周唯一主资料" : "本周唯一主证据", roleNote: ranked[0].url ? "只看指定范围" : "本周不新增阅读" }
         : { name: "本周任务与已有代码", scope: "只使用本页任务说明和自己的代码、测试、错题记录", role: "本周唯一主证据", roleNote: "本周不新增阅读" };
+    const videoRoute = mediaData && mediaData.plan(weekNo).route;
+    if (videoRoute) {
+      primary.role = "原主文档 · 补齐与复习";
+      primary.roleNote = "视频已懂的内容不重复通读";
+      primary.videoBridge = videoRoute.review;
+      if (videoRoute.docScope) primary.scope = videoRoute.docScope;
+      primary.isVideoReview = true;
+    }
     const references = ranked
       .filter(item => item.url && item.url !== primary.url)
       .slice(0, 2)
       .map(item => ({ ...item, role: authorityScore(item) >= 10 ? "官方核对" : "补充核对" }));
+    if (videoRoute?.gapRefs) references.splice(0, references.length, ...videoRoute.gapRefs);
     return { primary, references };
   }
 
@@ -148,23 +158,24 @@
       <article class="resource-card resource-card-primary">
         <div class="resource-role"><span>${escapeHTML(resource.role)}</span><em>${escapeHTML(resource.roleNote)}</em></div>
         <h4>${escapeHTML(resource.name)}</h4>
-        <div class="resource-route"><span>M1</span><span>对应 ${route.points.join(" / ")}</span><span>用于开始本周任务</span><span>主资料够用就不再切换</span></div>
+        <div class="resource-route"><span>M1</span><span>对应 ${route.points.join(" / ")}</span><span>${resource.isVideoReview ? "视频后补缺口" : "用于开始本周任务"}</span><span>主资料够用就不再切换</span></div>
         <p class="resource-scope"><strong>只看：</strong>${escapeHTML(resource.scope || "本周任务涉及的章节")}</p>
-        <p class="resource-stop"><strong>看到哪里停止：</strong>${escapeHTML(route.stop)}</p>
+        ${resource.videoBridge ? `<p class="resource-scope"><strong>视频后需补齐：</strong>${escapeHTML(resource.videoBridge)}</p>` : ""}
+        <p class="resource-stop"><strong>看到哪里停止：</strong>${escapeHTML(resource.isVideoReview ? "只补上面指定的缺口，再用本周 Q 自测；已懂的同一概念不从头重读。仍不会就回看对应分集或原文小节，不追加一整套课。" : route.stop)}</p>
         <div class="resource-meta">
           <span>${escapeHTML(meta?.grade || "已筛选")}</span>
           <span>${escapeHTML(meta?.type || "参考资料")}</span>
           <span>${escapeHTML(meta?.cost || "免费")}</span>
         </div>
         ${resource.url
-          ? `<a class="resource-link" href="${escapeHTML(resource.url)}" target="_blank" rel="noreferrer">打开主资料 <span aria-hidden="true">↗</span></a>`
+          ? `<a class="resource-link" href="${escapeHTML(resource.url)}" target="_blank" rel="noreferrer">${resource.isVideoReview ? "打开原文档 · 补齐 / 复习" : "打开主资料"} <span aria-hidden="true">↗</span></a>`
           : `<span class="resource-link is-local">使用自己的代码、错题和记录 <span aria-hidden="true">✓</span></span>`}
       </article>`;
   }
 
   function referenceRail(references) {
     return `<aside class="reference-rail">
-      <div class="reference-rail-head"><div><span>备用核对链接</span><strong>默认不读</strong></div><em>主资料缺内容或结论拿不准时才打开</em></div>
+      <div class="reference-rail-head"><div><span>${references.some(r => r.requiredGap) ? "这周确有缺口 · 精确补齐" : "备用核对链接"}</span><strong>${references.some(r => r.requiredGap) ? "只看标出的范围" : "默认不读"}</strong></div><em>${references.some(r => r.requiredGap) ? "只补本周主资料未覆盖的内容；每个链接已标出范围。" : "主资料缺内容或结论拿不准时才打开"}</em></div>
       ${references.length ? `<div class="reference-links">${references.map(resource => `
         <a href="${escapeHTML(resource.url)}" target="_blank" rel="noreferrer">
           <span><strong>${escapeHTML(resource.name)}</strong><small>${escapeHTML(resource.scope || "只核对本周涉及的机制、API 或边界")}</small></span>
@@ -241,11 +252,10 @@
     const coreRange = (week.hours.match(/[0-9]+(?:\.[0-9]+)?/g) || ["0"]).map(Number);
     const weeklyLow = coreRange[0] + (isReviewWeek ? 0 : 1) + 1.5;
     const weeklyHigh = (coreRange[1] || coreRange[0]) + (isReviewWeek ? 0 : 1) + 2;
-    const freeLow = Math.max(0, 16 - weeklyHigh);
-    const freeHigh = Math.max(0, 18 - weeklyLow);
+    const mediaPlan = mediaData && mediaData.plan(currentWeek);
 
-    $("#currentWeekLabel").textContent = `第 ${currentWeek} 周 / 52`;
-    $("#globalProgressText").textContent = `${global.passed}/52 周通过验收`;
+    $("#currentWeekLabel").textContent = `W${currentWeek} / 52 学习单元`;
+    $("#globalProgressText").textContent = `${global.passed}/52 单元通过验收`;
     $("#globalProgressBar").style.width = `${global.percent}%`;
     $("#weekProgressText").textContent = `${progress.done}/${progress.total} 项证据`;
     $("#weekProgressBar").style.width = `${progress.percent}%`;
@@ -260,7 +270,8 @@
         <div class="week-badges">
           <span>核心 ${escapeHTML(week.hours)}</span>
           <span>${isReviewWeek ? "验收已包含在核心时长" : "验收约 1h"}</span>
-          <span>算法保底 1.5–2h</span>
+          <span>算法每自然周 1.5–2h</span>
+          ${mediaPlan && mediaPlan.inputHours ? `<span>学习输入另留 ${mediaPlan.inputHours}h</span>` : ""}
           <span>难度：${escapeHTML(phase.bloom)}</span>
           ${project ? `<span>项目：${escapeHTML(project.title)}</span>` : ""}
         </div>
@@ -312,7 +323,7 @@
               </article>`;
             }).join("")}
           </div>
-          <div class="capacity-note"><strong>本周总预算约 ${weeklyLow}–${weeklyHigh}h</strong><span>核心任务 ${escapeHTML(week.hours)} + ${isReviewWeek ? "验收已计入核心任务" : "闭卷验收约 1h"} + 算法保底 1.5–2h。按你每周可用 16–18h，仍留约 ${freeLow}–${freeHigh}h 给加班、卡点和补弱；不再塞新知识。</span></div>
+          ${mediaData ? mediaData.budgetMarkup(currentWeek, week) : `<div class="capacity-note"><strong>原任务预算约 ${weeklyLow}–${weeklyHigh}h</strong><span>未计单独学习输入；请预留阅读、回看与加班时间。</span></div>`}
         </div>
       </section>
 
@@ -322,7 +333,7 @@
           <div class="section-title-row"><div><span class="eyebrow">本周学习路线</span><h2>先知道学什么，再按编号往下走</h2></div><span class="count-pill">${week.lecture.length} 个学习点</span></div>
           <div class="week-route">
             <article class="route-step"><span>STEP 1 · L</span><strong>明确学习点</strong><small>只学下面 L1–L${week.lecture.length}</small></article>
-            <article class="route-step"><span>STEP 2 · M</span><strong>只跟一份主资料</strong><small>默认只读 M1；缺口再查备用链接</small></article>
+            <article class="route-step"><span>STEP 2 · M</span><strong>${mediaPlan?.route ? "视频理解，文档复习" : "只跟原主文档"}</strong><small>${mediaPlan?.route ? "按完整模块续学；超量单元分两周" : "默认只读 M1；缺口再查备用链接"}</small></article>
             <article class="route-step"><span>STEP 3 · T</span><strong>完成实操</strong><small>T1 → T2 → T3，不另拆计划</small></article>
             <article class="route-step"><span>STEP 4 · Q</span><strong>关资料验收</strong><small>能回答 Q 并满足 Gate 才进入下周</small></article>
           </div>
@@ -337,9 +348,10 @@
       <section class="section-panel" id="resources">
         <div class="section-index">04</div>
         <div class="section-body">
-          <div class="section-title-row"><div><span class="eyebrow">已筛选资料</span><h2>本周只跟一份主资料</h2></div><span class="verified-pill">核查于 ${escapeHTML(curation.verifiedAt || "2026-08-29")}</span></div>
+          <div class="section-title-row"><div><span class="eyebrow">本周学习资料 · 不另拆计划</span><h2>${mediaPlan?.route ? "视频理解，文档补齐与复习" : "沿原文档 / 项目主线继续"}</h2></div><span class="verified-pill">${mediaPlan?.route ? "视频目录核对 " + escapeHTML(mediaData.verifiedAt) : "文档核查 " + escapeHTML(curation.verifiedAt || "2026-08-29")}</span></div>
+          ${mediaData ? mediaData.weekMarkup(currentWeek) : ""}
           <div class="resource-layout">${resourceCard(resourceSet.primary, week)}${referenceRail(resourceSet.references)}</div>
-          <p class="resource-rule">${escapeHTML(curation.rule || "默认只读主资料；只有主资料未覆盖或结论拿不准时，才打开备用核对链接。")}</p>
+          <p class="resource-rule">${mediaPlan?.route ? "视频讲解与原文档是一条路线，不是两份完整作业。官方链接仍只在缺口或版本疑问时使用；免费课程不要求购买配套服务。" : escapeHTML(curation.rule || "默认只读主资料；只有主资料未覆盖或结论拿不准时，才打开备用核对链接。")}</p>
         </div>
       </section>
 
@@ -371,7 +383,7 @@
         <div class="section-body">
           <div class="section-title-row"><div><span class="eyebrow">每周监督替代</span><h2>五分钟复盘，留下真实数据</h2></div><span class="save-state">自动保存</span></div>
           <div class="review-grid">
-            <label><span>实际投入（小时）</span><input type="number" min="0" max="40" step="0.5" data-text="v4-hours-${currentWeek}" value="${escapeHTML(storage.get(`v4-hours-${currentWeek}`))}" placeholder="例如 11.5"></label>
+            <label><span>本单元累计投入（小时，含顺延）</span><input type="number" min="0" max="40" step="0.5" data-text="v4-hours-${currentWeek}" value="${escapeHTML(storage.get(`v4-hours-${currentWeek}`))}" placeholder="例如 11.5"></label>
             <label><span>本周产物位置</span><input type="text" data-text="v4-proof-${currentWeek}" value="${escapeHTML(storage.get(`v4-proof-${currentWeek}`))}" placeholder="仓库、文档或截图路径"></label>
             <label class="wide"><span>最大的卡点是什么？证据是什么？</span><textarea data-text="v4-blocker-${currentWeek}" placeholder="不要写‘不熟’，写具体失败现象">${escapeHTML(storage.get(`v4-blocker-${currentWeek}`))}</textarea></label>
             <label class="wide"><span>下周采用什么学习策略？</span><textarea data-text="v4-strategy-${currentWeek}" placeholder="写‘如何学’，不是再列一个知识点">${escapeHTML(storage.get(`v4-strategy-${currentWeek}`))}</textarea></label>
@@ -409,7 +421,7 @@
     const global = allGateProgress();
     $("#weekProgressText").textContent = `${progress.done}/${progress.total} 项证据`;
     $("#weekProgressBar").style.width = `${progress.percent}%`;
-    $("#globalProgressText").textContent = `${global.passed}/52 周通过验收`;
+    $("#globalProgressText").textContent = `${global.passed}/52 单元通过验收`;
     $("#globalProgressBar").style.width = `${global.percent}%`;
     renderPhaseRail();
     renderWeekGrid();
@@ -486,6 +498,7 @@
       $("#phaseExplorer").after(audit);
     }
     audit.innerHTML = `
+      ${mediaData ? mediaData.libraryMarkup() : ""}
       <div class="audit-verdict"><span>二次审计结论</span><strong>${escapeHTML(system.audit.verdict)}</strong><em>依据：小林课程结构 + 当前岗位要求</em></div>
       <div class="allocation-grid">
         ${system.audit.allocation.map(item => `<article class="allocation-card"><div class="allocation-top"><span>${escapeHTML(item.share)}</span><em>${escapeHTML(item.weeks)}</em></div><strong>${escapeHTML(item.label)}</strong><small>${escapeHTML(item.level)}</small><p>${escapeHTML(item.note)}</p></article>`).join("")}
@@ -668,3 +681,4 @@
   setWeek(currentWeek, false);
   hideRoadmap(false);
 })();
+
